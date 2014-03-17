@@ -1,21 +1,35 @@
 <?xml version="1.0"?>
 <Settings>
 	<Reporting>
-		<Email>valentijn@nomadsagency.com</Email>
+		<Email>SEND TO EMAIL</Email>
+		<SmtpServer>
+			<Address>server address</Address>
+			<Email>SENT FROM EMAIL</Email>
+			<Port>25</Port>
+			<Username>SMTP USERNAME</Username>
+			<Password>SMTP PASSWORD</Password>
+		</SmtpServer>
 	</Reporting>
 	<Checks>
 		<Check>
-			<Location>C:\test check\testfile.txt</Location>
-			<Name>Test Check One</Name>
+			<Location>FILE LOCATION FULL PATH</Location>
+			<Name>Any sort of name</Name>
 			<Conditions>
 				<Condition type="modifiedAge" value="24" />
 			</Conditions>
 		</Check>
 		<Check>
-			<Location>C:\Users\valentijn.NOMADSAGENCY\Desktop\new_assets.txt</Location>
-			<Name>Test Check Two</Name>
+			<Location>FILE LOCATION FULL PATH</Location>
+			<Name>Any sort of name</Name>
 			<Conditions>
-				<Condition type="modifiedAge" value="12" />
+				<Condition type="minimumFileSize" value="1" />
+			</Conditions>
+		</Check>
+		<Check>
+			<Location>FILE LOCATION FULL PATH</Location>
+			<Name>Any sort of name</Name>
+			<Conditions>
+				<Condition type="minimumFileCount" value="2" />
 			</Conditions>
 		</Check>
 	</Checks>

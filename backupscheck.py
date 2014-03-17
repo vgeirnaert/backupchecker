@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 
 class CheckCondition:
 	type = ""
-	value = ""
+	value = 0
 
 # Check class, contains code that executes a specific check
 class Check:
@@ -24,13 +24,46 @@ class Check:
 			for condition in self.conditions:
 				if condition.type == "modifiedAge":
 					modifiedAge = os.stat(self.location).st_mtime
-					if (datetime.datetime.now() - datetime.datetime.fromtimestamp(modifiedAge)) < datetime.timedelta(hours=int(condition.value)): 
+					if (datetime.datetime.now() - datetime.datetime.fromtimestamp(modifiedAge)) < datetime.timedelta(hours=condition.value): 
 						self.summary = "Success"
 						self.success = True
 					else:
 						self.summary = "File " + self.location + " is too old"
 						self.success = False
-						break;
+						break
+				elif condition.type == "minimumFileSize":
+					fileSize = 0
+					# check individual file size
+					if(os.path.isfile(self.location)):
+						fileSize = os.path.getsize(self.location)
+					else: #check folder size
+						fileSize = self.getFolderSize(self.location)
+						
+					if(fileSize < (condition.value * 1024 * 1024)): # value is in megabytes, but filesize is in bytes
+						# we're smaller than the minimum size and fail the check
+						self.summary = self.location + " has size " + str(round(fileSize / (1024 *1024), 2)) + "MB, minimum is " + str(condition.value) + "MB"
+						self.success = False
+						break
+					else:
+						self.summary = "Success"
+						self.success = True
+						
+				elif condition.type == "minimumFileCount":
+					if(os.path.isfile(self.location)):
+						# we can only count in folders, so this check fails
+						self.summary = self.location + " is not a folder"
+						self.success = False
+						break
+					else: 
+						fileCount = self.getFileCount(self.location)
+						
+						if(fileCount < condition.value):
+							self.summary = self.location + " contains " + str(fileCount) + " files, less than the specified minimum " + str(condition.value)
+							self.success = False
+							break
+						else:
+							self.summary = "Success"
+							self.success = True
 				else:
 					self.summary = "Unknown condition: " + condition.type
 					self.success = False
@@ -38,11 +71,31 @@ class Check:
 		else:
 			self.success = False
 			self.summary = self.location + " does not exist"
+			
+	def getFolderSize(self, start_path):
+		total_size = 0
+		for dirpath, dirnames, filenames in os.walk(start_path):
+			for f in filenames:
+				fp = os.path.join(dirpath, f)
+				total_size += os.path.getsize(fp)
+		return total_size
+		
+	def getFileCount(self, start_path):
+		fileCount = 0
+		for dirpath, dirnames, filenames in os.walk(start_path):
+			fileCount = fileCount + len(filenames)
+
+		return fileCount
 
 # This class loads the settings file and makes the settings 
 # available to the rest of the script
 class Settings:
 	email = ""
+	smtp_server = ""
+	smtp_username = ""
+	smtp_password = ""
+	smtp_port = ""
+	smtp_email = ""
 	checks = [] # list of Check objects
 	
 	# constructor
@@ -58,6 +111,36 @@ class Settings:
 			else:
 				print("Error: unable to find email element in " + fileLocation)
 				
+			serverElement = root.find('Reporting/SmtpServer/Address')
+			if ET.iselement(serverElement):
+				self.smtp_server = serverElement.text
+			else:
+				print("Error: unable to find SMTP server address")
+				
+			usernameElement = root.find('Reporting/SmtpServer/Username')
+			if ET.iselement(usernameElement):
+				self.smtp_username = usernameElement.text
+			else:
+				print("Error: unable to find SMTP username")
+				
+			passwordElement = root.find('Reporting/SmtpServer/Password')
+			if ET.iselement(passwordElement):
+				self.smtp_password = passwordElement.text
+			else:
+				print("Error: unable to find SMTP password")
+				
+			portElement = root.find('Reporting/SmtpServer/Port')
+			if ET.iselement(portElement):
+				self.smtp_port = portElement.text
+			else:
+				print("Error: unable to find SMTP port")
+				
+			fromElement = root.find('Reporting/SmtpServer/Email')
+			if ET.iselement(fromElement):
+				self.smtp_email = fromElement.text
+			else:
+				print("Error: unable to find SMTP email")
+				
 			# checks
 			for check in root.findall('Checks/Check'):
 				myCheck = Check()
@@ -70,7 +153,7 @@ class Settings:
 				for condition in check.findall('Conditions/Condition'):
 					newCondition = CheckCondition()
 					newCondition.type = condition.get('type')
-					newCondition.value = condition.get('value')
+					newCondition.value = int(condition.get('value'))
 					myConditions.append(newCondition)
 				
 				myCheck.conditions = myConditions
@@ -84,6 +167,21 @@ class Settings:
 		
 	def getChecks(self):
 		return self.checks
+		
+	def getServerAddress(self):
+		return self.smtp_server
+		
+	def getServerUsername(self):
+		return self.smtp_username
+		
+	def getServerPassword(self):
+		return self.smtp_password
+		
+	def getServerPort(self):
+		return self.smtp_port
+		
+	def getServerEmail(self):
+		return self.smtp_email
 		
 # This class executes the checks defined in the settings
 class BackupsChecker:
@@ -105,7 +203,7 @@ class BackupsChecker:
 		self.report(summaries, settings)
 			
 	def report(self, summaries, settings):
-		sender = 'backupscript@nomadsagency.com'
+		sender = settings.getServerEmail()
 		msg = MIMEMultipart('alternative')
 		msg['Subject'] = "Backup Integrity Report " + str(datetime.date.today())
 		msg['From'] = sender
@@ -128,12 +226,36 @@ class BackupsChecker:
 		# format html email content
 		summaryHtml = """\
 			<html>
-				<head></head>
+				<head>
+				<style>
+					body {
+						font-family: arial;
+					}
+
+					td,th	{
+						padding: 3px;
+						padding-left: 1em;
+						padding-right: 1em;
+					}
+
+					th {
+						text-align: left;
+					}
+
+					tr.FAILED {
+						background-color:#FF6666;
+					}
+
+					tr.SUCCESS {
+						background-color: #85E085;
+					}
+					</style>
+				</head>
 				<body>
 					<h1>""" + title + """</h1>
 					<table>
 						<tr>
-							<th>Status</th><th>Job</th><th>Comment</th>
+							<th>Status</th><th>Check</th><th>Comment</th>
 						</tr>"""
 		for summary in summaries:
 			success = "FAILED"
@@ -151,10 +273,21 @@ class BackupsChecker:
 		part2 = MIMEText(summaryHtml, 'html')
 		msg.attach(part2)
 		
-		# send mail
-		s = smtplib.SMTP('localhost')
-		s.sendmail(sender, settings.getEmail(), msg.as_string())
-		s.quit
+		# send mail // qhtqrumhnyzivufm
+		try:
+			print('connecting to ' + settings.getServerAddress())
+			s = smtplib.SMTP(settings.getServerAddress(), settings.getServerPort())
+			print(s.ehlo())
+			print(s.starttls())
+			s.login(settings.getServerUsername(), settings.getServerPassword())
+			try:
+				s.sendmail(sender, settings.getEmail(), msg.as_string())
+			except Exception as e:
+				print("Unable to send mail: " + str(e))
+			finally:
+				s.quit
+		except Exception as e:
+			print("Unable to connect to SMTP: " + str(e))
 	
 class CheckSummary:
 	name = ""
