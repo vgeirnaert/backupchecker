@@ -273,7 +273,7 @@ class BackupsChecker:
 		part2 = MIMEText(summaryHtml, 'html')
 		msg.attach(part2)
 		
-		# send mail // qhtqrumhnyzivufm
+		# send mail
 		try:
 			print('connecting to ' + settings.getServerAddress())
 			s = smtplib.SMTP(settings.getServerAddress(), settings.getServerPort())
