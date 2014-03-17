@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<Settings>
+	<Reporting>
+		<Email>valentijn@nomadsagency.com</Email>
+	</Reporting>
+	<Checks>
+		<Check>
+			<Location>C:\test check\testfile.txt</Location>
+			<Name>Test Check One</Name>
+			<Conditions>
+				<Condition type="modifiedAge" value="24" />
+			</Conditions>
+		</Check>
+		<Check>
+			<Location>C:\Users\valentijn.NOMADSAGENCY\Desktop\new_assets.txt</Location>
+			<Name>Test Check Two</Name>
+			<Conditions>
+				<Condition type="modifiedAge" value="12" />
+			</Conditions>
+		</Check>
+	</Checks>
+</Settings>
