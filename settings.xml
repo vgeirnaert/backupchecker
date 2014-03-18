@@ -33,19 +33,7 @@ The Checks element can contain 0 or more Check elements, specified above.
 			<Name>Any sort of name</Name>
 			<Conditions>
 				<Condition type="modifiedAge" value="24" />
-			</Conditions>
-		</Check>
-		<Check>
-			<Location>FILE LOCATION FULL PATH</Location>
-			<Name>Any sort of name</Name>
-			<Conditions>
 				<Condition type="minimumFileSize" value="1" />
-			</Conditions>
-		</Check>
-		<Check>
-			<Location>FILE LOCATION FULL PATH</Location>
-			<Name>Any sort of name</Name>
-			<Conditions>
 				<Condition type="minimumFileCount" value="2" />
 			</Conditions>
 		</Check>
