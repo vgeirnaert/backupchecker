@@ -1,4 +1,21 @@
 <?xml version="1.0"?>
+<!--
+Explanation of Check structure:
+
+<Check>
+	<Location>FILE LOCATION FULL PATH</Location> 		// this should be the full path to the file or directory to check
+	<Name>Any sort of name</Name> 						// this should be a human readable name, it is used when reporting on failed/passed checks
+	<Conditions>										// the conditions list can contain 1 or more conditions
+		<Condition type="modifiedAge" value="24" />		// modifiedAge checks when the file was last modified, the check passes when the file or folder was modified within the specified time period, 
+														// the time period (value attribute) is in HOURS, if executed on a folder, it will only check the folder modified time, not the containing files
+		<Condition type="minimumFileSize" value="1" /> 	// minimumFileSize check passes if the file or folder's total size is equal to or exceeds the specified size (in megabytes),
+		<Condition type="minimumFileCount" value="2" />	// minimumFileCount check passes if the folder and it's subfolders contain at least the specified number of files,
+														// this check must point to a folder, not a file!
+	</Conditions>
+</Check>
+
+The Checks element can contain 0 or more Check elements, specified above.
+-->
 <Settings>
 	<Reporting>
 		<Email>SEND TO EMAIL</Email>

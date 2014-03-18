@@ -192,20 +192,31 @@ class BackupsChecker:
 		
 		checks = settings.getChecks()
 		
+		fails = 0
+		
 		for check in checks:
 			check.run()
 			summary = CheckSummary()
 			summary.name = check.name
 			summary.summary = check.summary
 			summary.success = check.success
+			
+			if not summary.success:
+				fails = fails + 1
+				
 			summaries.append(summary)
 			
-		self.report(summaries, settings)
+		self.report(summaries, settings, fails)
 			
-	def report(self, summaries, settings):
+	def report(self, summaries, settings, fails):
 		sender = settings.getServerEmail()
+		
+		failString = ""
+		if fails > 0:
+			failString = " (" + str(fails) + " failed)"
+			
 		msg = MIMEMultipart('alternative')
-		msg['Subject'] = "Backup Integrity Report " + str(datetime.date.today())
+		msg['Subject'] = "Backup Integrity Report " + str(datetime.date.today()) + failString
 		msg['From'] = sender
 		msg['To'] = settings.getEmail()
 		
@@ -253,6 +264,7 @@ class BackupsChecker:
 				</head>
 				<body>
 					<h1>""" + title + """</h1>
+					<h2>""" + str(len(summaries) - fails) + """ checks passed, """ + str(fails) + """ failed</h2>
 					<table>
 						<tr>
 							<th>Status</th><th>Check</th><th>Comment</th>
