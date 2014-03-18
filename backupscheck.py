@@ -21,6 +21,9 @@ class Check:
 	def run(self):
 		if os.path.exists(self.location):
 			# check all conditions
+			# When adding new conditions, note that every fail should include a 'break' statement
+			# in order to break out of the loop. This ensures that even a check fail doesn't get
+			# overridden by a subsequent successful check.
 			for condition in self.conditions:
 				if condition.type == "modifiedAge":
 					modifiedAge = os.stat(self.location).st_mtime
