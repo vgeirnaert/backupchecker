@@ -22,7 +22,7 @@ class Check:
 		if os.path.exists(self.location):
 			# check all conditions
 			# When adding new conditions, note that every fail should include a 'break' statement
-			# in order to break out of the loop. This ensures that even a check fail doesn't get
+			# in order to break out of the loop. This ensures that a failed check doesn't get
 			# overridden by a subsequent successful check.
 			for condition in self.conditions:
 				if condition.type == "modifiedAge":
