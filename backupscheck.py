@@ -25,7 +25,7 @@ class Check:
 				if condition.type == "modifiedAge":
 					modifiedAge = os.stat(self.location).st_mtime
 					if (datetime.datetime.now() - datetime.datetime.fromtimestamp(modifiedAge)) < datetime.timedelta(hours=condition.value): 
-						self.summary = "Success"
+						self.summary = "Passed"
 						self.success = True
 					else:
 						self.summary = "File " + self.location + " is too old"
@@ -45,7 +45,7 @@ class Check:
 						self.success = False
 						break
 					else:
-						self.summary = "Success"
+						self.summary = "Passed"
 						self.success = True
 						
 				elif condition.type == "minimumFileCount":
@@ -62,7 +62,7 @@ class Check:
 							self.success = False
 							break
 						else:
-							self.summary = "Success"
+							self.summary = "Passed"
 							self.success = True
 				else:
 					self.summary = "Unknown condition: " + condition.type
@@ -257,7 +257,7 @@ class BackupsChecker:
 						background-color:#FF6666;
 					}
 
-					tr.SUCCESS {
+					tr.PASSED {
 						background-color: #85E085;
 					}
 					</style>
@@ -272,7 +272,7 @@ class BackupsChecker:
 		for summary in summaries:
 			success = "FAILED"
 			if summary.success:
-				success = "SUCCESS"
+				success = "PASSED"
 				
 			summaryHtml = summaryHtml + "<tr class=\"" + success + "\"><td>" + success + "</td><td>" + summary.name + "</td><td>" + summary.summary + "</td></tr>"
 			
