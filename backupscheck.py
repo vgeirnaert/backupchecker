@@ -25,6 +25,7 @@ class Check:
 			# in order to break out of the loop. This ensures that a failed check doesn't get
 			# overridden by a subsequent successful check.
 			for condition in self.conditions:
+				# ----- condition: modifiedAge -------
 				if condition.type == "modifiedAge":
 					modifiedAge = os.stat(self.location).st_mtime
 					if (datetime.datetime.now() - datetime.datetime.fromtimestamp(modifiedAge)) < datetime.timedelta(hours=condition.value): 
@@ -34,6 +35,7 @@ class Check:
 						self.summary = "File " + self.location + " is too old"
 						self.success = False
 						break
+				# ----- condition: minimumFileSize -------
 				elif condition.type == "minimumFileSize":
 					fileSize = 0
 					# check individual file size
@@ -50,7 +52,7 @@ class Check:
 					else:
 						self.summary = "Passed"
 						self.success = True
-						
+				# ----- condition: minimumFileCount -------
 				elif condition.type == "minimumFileCount":
 					if(os.path.isfile(self.location)):
 						# we can only count in folders, so this check fails
