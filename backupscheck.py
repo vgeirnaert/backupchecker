@@ -95,15 +95,17 @@ class Check:
 		except Exception as e:
 			self.success = False
 			self.summary = str(e).replace('\\\\', '\\')
-			
+	
+	# returns integer
 	def getFolderSize(self, start_path):
 		total_size = 0
 		for dirpath, dirnames, filenames in os.walk(start_path):
 			for f in filenames:
-				fp = u"\\\\?\\" + os.path.abspath(os.path.join(dirpath, f))
+				fp = u"\\\\?\\" + os.path.abspath(os.path.join(dirpath, f))  # support for paths longer than 260 characters, see http://msdn.microsoft.com/en-us/library/aa365247%28VS.85%29.aspx#maxpath
 				total_size += os.path.getsize(fp)
 		return total_size
-		
+	
+	# returns integer
 	def getFileCount(self, start_path):
 		fileCount = 0
 		for dirpath, dirnames, filenames in os.walk(start_path):
@@ -111,14 +113,16 @@ class Check:
 
 		return fileCount
 	
+	# returns boolean
 	def isFileAgeLessThan(self, path, maxAge):
 		modifiedAge = os.stat(path).st_mtime
 		return (datetime.datetime.now() - datetime.datetime.fromtimestamp(modifiedAge)) < datetime.timedelta(hours=maxAge) 
-		
+	
+	# returns boolean, string
 	def checkFileAgeInFolder(self, folder, maxAge):
 		for dirpath, dirnames, filenames in os.walk(folder):
 			for f in filenames:
-				fp = u"\\\\?\\" + os.path.abspath(os.path.join(dirpath, f))
+				fp = u"\\\\?\\" + os.path.abspath(os.path.join(dirpath, f)) # support for paths longer than 260 characters, http://msdn.microsoft.com/en-us/library/aa365247%28VS.85%29.aspx#maxpath
 				if not self.isFileAgeLessThan(fp, maxAge):
 					return False, dirpath + fp
 		
@@ -345,9 +349,10 @@ class CheckSummary:
 	
 # script starts here:
 
-# check if we have an argument
+# check if we have an argument (the settings file)
 if len(sys.argv) == 2:
 	checker = BackupsChecker()
+	# run our checker
 	checker.run(sys.argv[1])
 else:
 	print("Error: missing settings file location!")
