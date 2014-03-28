@@ -94,13 +94,13 @@ class Check:
 				self.summary = self.location + " does not exist"
 		except Exception as e:
 			self.success = False
-			self.summary = str(e)
+			self.summary = str(e).replace('\\\\', '\\')
 			
 	def getFolderSize(self, start_path):
 		total_size = 0
 		for dirpath, dirnames, filenames in os.walk(start_path):
 			for f in filenames:
-				fp = os.path.join(dirpath, f)
+				fp = u"\\\\?\\" + os.path.abspath(os.path.join(dirpath, f))
 				total_size += os.path.getsize(fp)
 		return total_size
 		
@@ -118,7 +118,7 @@ class Check:
 	def checkFileAgeInFolder(self, folder, maxAge):
 		for dirpath, dirnames, filenames in os.walk(folder):
 			for f in filenames:
-				fp = os.path.join(dirpath, f)
+				fp = u"\\\\?\\" + os.path.abspath(os.path.join(dirpath, f))
 				if not self.isFileAgeLessThan(fp, maxAge):
 					return False, dirpath + fp
 		
