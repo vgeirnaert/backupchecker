@@ -19,63 +19,82 @@ class Check:
 	summary = ""
 	
 	def run(self):
-		if os.path.exists(self.location):
-			# check all conditions
-			# When adding new conditions, note that every fail should include a 'break' statement
-			# in order to break out of the loop. This ensures that a failed check doesn't get
-			# overridden by a subsequent successful check.
-			for condition in self.conditions:
-				# ----- condition: modifiedAge -------
-				if condition.type == "modifiedAge":
-					modifiedAge = os.stat(self.location).st_mtime
-					if (datetime.datetime.now() - datetime.datetime.fromtimestamp(modifiedAge)) < datetime.timedelta(hours=condition.value): 
-						self.summary = "Passed"
-						self.success = True
-					else:
-						self.summary = "File " + self.location + " is too old"
-						self.success = False
-						break
-				# ----- condition: minimumFileSize -------
-				elif condition.type == "minimumFileSize":
-					fileSize = 0
-					# check individual file size
-					if(os.path.isfile(self.location)):
-						fileSize = os.path.getsize(self.location)
-					else: #check folder size
-						fileSize = self.getFolderSize(self.location)
-						
-					if(fileSize < (condition.value * 1024 * 1024)): # value is in megabytes, but filesize is in bytes
-						# we're smaller than the minimum size and fail the check
-						self.summary = self.location + " has size " + str(round(fileSize / (1024 *1024), 2)) + "MB, minimum is " + str(condition.value) + "MB"
-						self.success = False
-						break
-					else:
-						self.summary = "Passed"
-						self.success = True
-				# ----- condition: minimumFileCount -------
-				elif condition.type == "minimumFileCount":
-					if(os.path.isfile(self.location)):
-						# we can only count in folders, so this check fails
-						self.summary = self.location + " is not a folder"
-						self.success = False
-						break
-					else: 
-						fileCount = self.getFileCount(self.location)
-						
-						if(fileCount < condition.value):
-							self.summary = self.location + " contains " + str(fileCount) + " files, less than the specified minimum " + str(condition.value)
+		try:
+			if os.path.exists(self.location):
+				# check all conditions
+				# When adding new conditions, note that every fail should include a 'break' statement
+				# in order to break out of the loop. This ensures that a failed check doesn't get
+				# overridden by a subsequent successful check.
+				for condition in self.conditions:
+					# ----- condition: modifiedAge -------
+					if condition.type == "modifiedAge":
+						if self.isFileAgeLessThan(self.location, condition.value):
+							self.summary = "Passed"
+							self.success = True
+						else:
+							self.summary = "File " + self.location + " is too old"
+							self.success = False
+							break
+					# ----- condition: modifiedAgeInFolder ----
+					elif condition.type == "modifiedAgeInFolder":
+						if os.path.isfile(self.location):
+							# we can only count in folders, so this check fails
+							self.summary = self.location + " is not a folder"
+							self.success = False
+							break
+						else:
+							isPassed, filename = self.checkFileAgeInFolder(self.location, condition.value)
+							if isPassed:
+								self.summary = "Passed"
+								self.success = True
+							else:
+								self.summary = "File " + filename + " is too old"
+								self.success = False
+								break;
+					# ----- condition: minimumFileSize -------
+					elif condition.type == "minimumFileSize":
+						fileSize = 0
+						# check individual file size
+						if os.path.isfile(self.location):
+							fileSize = os.path.getsize(self.location)
+						else: #check folder size
+							fileSize = self.getFolderSize(self.location)
+							
+						if fileSize < (condition.value * 1024 * 1024): # value is in megabytes, but filesize is in bytes
+							# we're smaller than the minimum size and fail the check
+							self.summary = self.location + " has size " + str(round(fileSize / (1024 *1024), 2)) + "MB, minimum is " + str(condition.value) + "MB"
 							self.success = False
 							break
 						else:
 							self.summary = "Passed"
 							self.success = True
-				else:
-					self.summary = "Unknown condition: " + condition.type
-					self.success = False
-					break
-		else:
+					# ----- condition: minimumFileCount -------
+					elif condition.type == "minimumFileCount":
+						if os.path.isfile(self.location):
+							# we can only count in folders, so this check fails
+							self.summary = self.location + " is not a folder"
+							self.success = False
+							break
+						else: 
+							fileCount = self.getFileCount(self.location)
+							
+							if fileCount < condition.value:
+								self.summary = self.location + " contains " + str(fileCount) + " files, less than the specified minimum " + str(condition.value)
+								self.success = False
+								break
+							else:
+								self.summary = "Passed"
+								self.success = True
+					else:
+						self.summary = "Unknown condition: " + condition.type
+						self.success = False
+						break
+			else:
+				self.success = False
+				self.summary = self.location + " does not exist"
+		except Exception as e:
 			self.success = False
-			self.summary = self.location + " does not exist"
+			self.summary = str(e)
 			
 	def getFolderSize(self, start_path):
 		total_size = 0
@@ -91,6 +110,19 @@ class Check:
 			fileCount = fileCount + len(filenames)
 
 		return fileCount
+	
+	def isFileAgeLessThan(self, path, maxAge):
+		modifiedAge = os.stat(path).st_mtime
+		return (datetime.datetime.now() - datetime.datetime.fromtimestamp(modifiedAge)) < datetime.timedelta(hours=maxAge) 
+		
+	def checkFileAgeInFolder(self, folder, maxAge):
+		for dirpath, dirnames, filenames in os.walk(folder):
+			for f in filenames:
+				fp = os.path.join(dirpath, f)
+				if not self.isFileAgeLessThan(fp, maxAge):
+					return False, dirpath + fp
+		
+		return True, ""
 
 # This class loads the settings file and makes the settings 
 # available to the rest of the script
