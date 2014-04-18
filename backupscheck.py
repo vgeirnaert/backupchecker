@@ -90,6 +90,7 @@ class Check:
 					elif condition.type == "maximumRobocopyFails":
 						if os.path.isfile(self.location):
 							groups = self.runRobocopyCheckOnFile(self.location)
+							hasErrors = False
 							for tuple in groups:
 								type = tuple[0] # 'Dirs' or 'Files'
 								fails = int(tuple[1]) # number of failures
@@ -97,10 +98,15 @@ class Check:
 								if fails > condition.value:
 									self.summary = "Copying " + type + " has " + str(fails) + " failures."
 									self.success = False
-									break;
+									hasErrors = True
+									break
 								else:									
 									self.summary = "Passed"
 									self.success = True
+									
+							# if we encountered an error in our loop, break
+							if hasErrors:
+								break
 						else:
 							self.summary = self.location + " is not a file"
 							self.success = False
