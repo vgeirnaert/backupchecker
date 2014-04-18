@@ -3,6 +3,7 @@ import sys
 import os
 import datetime
 import smtplib
+import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -85,6 +86,24 @@ class Check:
 							else:
 								self.summary = "Passed"
 								self.success = True
+					# ----- condition: maximumRobocopyFails -------
+					elif condition.type == "maximumRobocopyFails":
+						if os.path.isfile(self.location):
+							groups = self.runRobocopyCheckOnFile(self.location)
+							for tuple in groups:
+								type = tuple[0] # 'Dirs' or 'Files'
+								fails = int(tuple[1]) # number of failures
+								
+								if fails > condition.value:
+									self.summary = "Copying " + type + " has " + str(fails) + " failures."
+									self.success = False
+									break;
+								else:									
+									self.summary = "Passed"
+									self.success = True
+						else:
+							self.summary = self.location + " is not a file"
+							self.success = False
 					else:
 						self.summary = "Unknown condition: " + condition.type
 						self.success = False
@@ -95,7 +114,16 @@ class Check:
 		except Exception as e:
 			self.success = False
 			self.summary = str(e).replace('\\\\', '\\')
-	
+			
+	def runRobocopyCheckOnFile(self, file):
+		pattern = re.compile("([Dirs|Files]+) : +\d+ +\d+ +\d+ +\d+ +(\d+) ")
+		result = []
+		for i, line in enumerate(open(self.location, encoding='latin-1')):
+			for match in re.finditer(pattern, line):
+				result.append(match.groups())
+		
+		return result
+		
 	# returns integer
 	def getFolderSize(self, start_path):
 		total_size = 0
